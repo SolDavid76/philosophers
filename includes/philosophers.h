@@ -30,9 +30,11 @@ typedef struct s_rules
 
 typedef struct s_philo
 {
-	pthread_t		id;
+	int				id;
+	pthread_t		thread_id;
 	unsigned long	start;
 	unsigned long	now;
+	unsigned long	wait;
 	unsigned long	index;
 	int				die;
 	int				eat;
@@ -42,7 +44,6 @@ typedef struct s_philo
 }					t_philo;
 
 /* main.c */
-void	ft_exit(t_philo *philo, t_rules *rules, char *error_msg);
 
 /* utils.c */
 int	ft_strlen(char *str);

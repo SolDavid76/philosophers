@@ -23,6 +23,7 @@ t_philo	*philo_init(t_rules *rules)
 	i = 0;
 	while (i < rules->nb_philo)
 	{
+		philo[i].id = i + 1;
 		philo[i].die = rules->die;
 		philo[i].eat = rules->eat;
 		philo[i].sleep = rules->sleep;
@@ -67,22 +68,37 @@ unsigned long	get_time(void)
 	return ((time.tv_sec * 1000) + (time.tv_usec / 1000));
 }
 
+void	wait(t_philo *philo, unsigned long time, unsigned long tmp)
+{
+	while (42)
+	{
+		philo->now = get_time();
+		if (philo->now - tmp >= time)
+			return ;
+	}
+}
+
 void	*routine(void *arg)
 {
 	t_philo *philo = arg;
 
-	philo->start = get_time();
 	philo->index = 0;
+	philo->start = get_time();
+	philo->now = philo->start;
 	while (42)
 	{
-		philo->now = get_time();
-		if (philo->now - philo->start >= philo->rules->sleep * philo->index)
+		printf("%lu %d is eating\n", get_time() - philo->start, philo->id);
+		philo->wait = get_time();
+		while (get_time() - philo->wait < (unsigned long)(philo->eat))
 		{
-			printf("%lu\n", philo->now - philo->start);
-			philo->index++;
 		}
-		usleep(philo->rules->sleep); //AMONGUS
+		printf("%lu %d is sleeping\n", get_time() - philo->start, philo->id);
+		philo->wait = get_time();
+		while (get_time() - philo->wait < (unsigned long)(philo->sleep))
+		{
+		}
 	}
+	return (NULL);
 }
 
 int	main(int ac, char **av)
@@ -93,7 +109,7 @@ int	main(int ac, char **av)
 	philo = parsing(av + 1);
 	if (!philo)
 		return (1);
-	pthread_create(&(philo[0].id), NULL, routine, &philo[0]);
+	pthread_create(&(philo[0].thread_id), NULL, routine, &philo[0]);
 	printf("nb_philo = %d, die = %d, eat = %d, sleep = %d, must_eat = %d\n", philo->rules->nb_philo, philo->rules->die, philo->rules->eat, philo->rules->sleep, philo->rules->must_eat);
 	while (42)
 	{

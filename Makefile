@@ -13,7 +13,7 @@ OBJS		=	$(addprefix $(OBJS_DIR), $(OBJ))
 
 NAME		=	philo
 
-CC			=	gcc
+CC			=	gcc -pthread
 
 CFLAGS		=	-Wall -Wextra -Werror -g
 
