@@ -6,7 +6,7 @@
 /*   By: djanusz <djanusz@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/28 15:23:45 by djanusz           #+#    #+#             */
-/*   Updated: 2023/07/03 14:56:50 by djanusz          ###   ########.fr       */
+/*   Updated: 2023/07/03 18:10:15 by djanusz          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,22 +22,26 @@ unsigned long	get_time(void)
 
 t_philo	*fork_mutex_init(t_philo *philo)
 {
-	pthread_mutex_t	*res;
 	int				i;
 
-	res = malloc(sizeof(pthread_mutex_t) * philo->nb_philo);
-	if (!res)
+	philo->all_forks = malloc(sizeof(pthread_mutex_t) * philo->nb_philo);
+	if (!philo->all_forks)
 		return (write(1, "NOT ENOUGH MEMORY\n", 18), free(philo), NULL);
 	i = -1;
 	while (++i < philo->nb_philo)
 	{
-		pthread_mutex_init(&res[i], NULL);
-		philo[i].l_fork = res[i];
+		pthread_mutex_init(&philo->all_forks[i], NULL);
+		philo[i].l_fork = i;
+		// philo[i].l_fork = res[i];
 	}
-	philo[--i].r_fork = res[0];
-	while (--i)
-		philo[i].l_fork = res[i + 1];
-	return (free(res), philo);
+	i = -1;
+	while (++i < philo->nb_philo)
+		philo[i].r_fork = i + 1;
+	philo[i].r_fork = 0;
+	// philo[--i].r_fork = res[0];
+	// while (--i)
+	// 	philo[i].r_fork = res[i + 1];
+	return (philo);
 }
 
 t_philo	*philo_init(t_rules *rules)
@@ -108,9 +112,15 @@ void	*routine(void *arg)
 	t_philo *philo = arg;
 
 	philo->index = 0;
-	philo->now = philo->start;
 	while (42)
 	{
+		/* start of eating */
+		dprintf(2, "#DEBUG : locking the l_fork (%u) of %d\n", philo->l_fork, philo->id);
+		pthread_mutex_lock(&philo->all_forks[philo->l_fork]);
+		printf("%lu %d has taken a fork\n", get_time() - philo->start, philo->id);
+		dprintf(2, "#DEBUG : locking the r_fork (%u) of %d\n", philo->r_fork, philo->id);
+		pthread_mutex_lock(&philo->all_forks[philo->r_fork]);
+		printf("%lu %d has taken a fork\n", get_time() - philo->start, philo->id);
 		pthread_mutex_lock(&philo->print);
 		printf("%lu %d is eating\n", get_time() - philo->start, philo->id);
 		pthread_mutex_unlock(&philo->print);
@@ -118,6 +128,12 @@ void	*routine(void *arg)
 		while (get_time() - philo->wait < (unsigned long)(philo->eat))
 		{
 		}
+		dprintf(2, "#DEBUG : unlocking the r_fork (%u) of %d\n", philo->r_fork, philo->id);
+		pthread_mutex_unlock(&philo->all_forks[philo->r_fork]);
+		dprintf(2, "#DEBUG : unlocking the l_fork (%u) of %d\n", philo->r_fork, philo->id);
+		pthread_mutex_unlock(&philo->all_forks[philo->l_fork]);
+		/* end of eating */
+		/* start of sleeping */
 		pthread_mutex_lock(&philo->print);
 		printf("%lu %d is sleeping\n", get_time() - philo->start, philo->id);
 		pthread_mutex_unlock(&philo->print);
@@ -125,6 +141,12 @@ void	*routine(void *arg)
 		while (get_time() - philo->wait < (unsigned long)(philo->sleep))
 		{
 		}
+		/* end of sleeping */
+		/* start of thinking */
+		pthread_mutex_lock(&philo->print);
+		printf("%lu %d is thinking\n", get_time() - philo->start, philo->id);
+		pthread_mutex_unlock(&philo->print);
+		/* end of thinking */
 	}
 	return (NULL);
 }
