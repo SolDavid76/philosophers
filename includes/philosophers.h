@@ -6,7 +6,7 @@
 /*   By: djanusz <djanusz@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/28 15:18:59 by djanusz           #+#    #+#             */
-/*   Updated: 2023/06/30 16:57:26 by djanusz          ###   ########.fr       */
+/*   Updated: 2023/07/03 14:43:31 by djanusz          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,13 +33,17 @@ typedef struct s_philo
 	int				id;
 	pthread_t		thread_id;
 	unsigned long	start;
-	unsigned long	now;
+	unsigned long	now; //may be useless
 	unsigned long	wait;
 	unsigned long	index;
+	int				nb_philo;
 	int				die;
 	int				eat;
 	int				sleep;
 	int				must_eat;
+	pthread_mutex_t	print;
+	pthread_mutex_t	r_fork;
+	pthread_mutex_t	l_fork;
 	t_rules			*rules;
 }					t_philo;
 
