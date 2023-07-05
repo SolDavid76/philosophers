@@ -20,17 +20,19 @@ unsigned long	get_time(void)
 	return ((time.tv_sec * 1000) + (time.tv_usec / 1000));
 }
 
-int	fork_mutex_init(t_rules *rules)
+// rules->print = malloc(sizeof(pthread_mutex_t));
+// if (!rules->print)
+// 	return(-1);
+// if (pthread_mutex_init(rules->print, NULL))
+// 	return (-1);
+int	mutex_init(t_rules *rules)
 {
 	int	i;
 
 	rules->all_forks = malloc(sizeof(pthread_mutex_t) * rules->nb_philo);
 	if (!rules->all_forks)
 		return (-1);
-	rules->print = malloc(sizeof(pthread_mutex_t));
-	if (!rules->print)
-		return(-1);
-	if (pthread_mutex_init(rules->print, NULL))
+	if (pthread_mutex_init(&rules->print, NULL))
 		return (-1);
 	i = -1;
 	while (++i < rules->nb_philo)
@@ -46,7 +48,7 @@ t_rules	*philo_init(t_rules *rules)
 	int		i;
 
 	rules->philo = malloc(sizeof(t_philo) * rules->nb_philo);
-	if (!rules->philo || fork_mutex_init(rules))
+	if (!rules->philo || mutex_init(rules))
 		return (write(1, "NOT ENOUGH MEMORY\n", 18), NULL);
 	i = -1;
 	rules->start = get_time();
@@ -54,11 +56,10 @@ t_rules	*philo_init(t_rules *rules)
 	{
 		rules->philo[i].id = i + 1;
 		rules->philo[i].start = rules->start;
-		rules->philo[i].die = rules->die;
 		rules->philo[i].eat = rules->eat;
 		rules->philo[i].sleep = rules->sleep;
 		rules->philo[i].must_eat = rules->must_eat;
-		rules->philo[i].print = rules->print;
+		rules->philo[i].print = &rules->print;
 		rules->philo[i].r_fork = &rules->all_forks[(i + 1) % rules->nb_philo];
 		rules->philo[i].l_fork = &rules->all_forks[i];
 	}
@@ -117,8 +118,9 @@ void	*routine(void *arg)
 		printf("%lu %d has taken the right fork\n", get_time() - philo->start, philo->id);
 		printf("%lu %d is eating\n", get_time() - philo->start, philo->id);
 		pthread_mutex_unlock(philo->print);
-		philo->start_wait = get_time();
-		while (get_time() - philo->start_wait < (unsigned long)(philo->eat))
+		philo->now = get_time();
+		philo->last_eat = philo->now;
+		while (get_time() - philo->now < (unsigned long)(philo->eat))
 		{
 		}
 		pthread_mutex_unlock(philo->r_fork);
@@ -128,8 +130,8 @@ void	*routine(void *arg)
 		pthread_mutex_lock(philo->print);
 		printf("%lu %d is sleeping\n", get_time() - philo->start, philo->id);
 		pthread_mutex_unlock(philo->print);
-		philo->start_wait = get_time();
-		while (get_time() - philo->start_wait < (unsigned long)(philo->sleep))
+		philo->now = get_time();
+		while (get_time() - philo->now < (unsigned long)(philo->sleep))
 		{
 		}
 		/* end of sleeping */
