@@ -6,7 +6,7 @@
 /*   By: djanusz <djanusz@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/28 15:18:59 by djanusz           #+#    #+#             */
-/*   Updated: 2023/07/07 10:48:48 by djanusz          ###   ########.fr       */
+/*   Updated: 2023/07/07 10:52:48 by djanusz          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -48,7 +48,7 @@ typedef struct s_rules
 	pthread_mutex_t	check_end;
 	pthread_mutex_t	print;
 	pthread_mutex_t	*all_forks;
-	t_philo			**philo;
+	t_philo			*philo;
 }					t_rules;
 
 /* utils.c */

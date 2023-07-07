@@ -6,7 +6,7 @@
 /*   By: djanusz <djanusz@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/28 15:23:45 by djanusz           #+#    #+#             */
-/*   Updated: 2023/07/07 10:50:06 by djanusz          ###   ########.fr       */
+/*   Updated: 2023/07/07 11:49:30 by djanusz          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,20 +43,18 @@ t_rules	*philo_init(t_rules *rules)
 	if (!rules->philo || mutex_init(rules))
 		return (write(1, "NOT ENOUGH MEMORY\n", 18), NULL);
 	i = -1;
-	rules->start = get_time();
 	while (++i < rules->nb_philo)
 	{
-		rules->philo[i] = malloc(sizeof(t_philo));
-		rules->philo[i]->id = i + 1;
-		rules->philo[i]->start = rules->start;
-		rules->philo[i]->eat = rules->eat;
-		rules->philo[i]->sleep = rules->sleep;
-		rules->philo[i]->must_eat = rules->must_eat;
-		rules->philo[i]->end = 0;
-		pthread_mutex_init(&rules->check_end, NULL);
-		rules->philo[i]->print = &rules->print;
-		rules->philo[i]->r_fork = &rules->all_forks[(i + 1) % rules->nb_philo];
-		rules->philo[i]->l_fork = &rules->all_forks[i];
+	// 	rules->philo[i] = malloc(sizeof(t_philo));
+		rules->philo[i].id = i + 1;
+		rules->philo[i].eat = rules->eat;
+		rules->philo[i].sleep = rules->sleep;
+		rules->philo[i].must_eat = rules->must_eat;
+		rules->philo[i].end = 0;
+		pthread_mutex_init(&rules->philo[i].check_end, NULL);
+		rules->philo[i].print = &rules->print;
+		rules->philo[i].r_fork = &rules->all_forks[(i + 1) % rules->nb_philo];
+		rules->philo[i].l_fork = &rules->all_forks[i];
 	}
 	return (rules);
 }
@@ -139,7 +137,9 @@ void	*routine(void *arg)
 	t_philo	*philo;
 
 	philo = arg;
-	while (philo->must_eat != 0)
+	if (philo->id % 2 == 0)
+		usleep((philo->eat * 1000) * 0.5);
+	while (42)
 	{
 		if (eating(philo))
 			return (NULL);
@@ -148,32 +148,11 @@ void	*routine(void *arg)
 		usleep(philo->sleep * 1000);
 		if (print_action(philo, "is thinking"))
 			return (NULL);
-		philo->must_eat--;
+		if (0 < philo->must_eat)
+			philo->must_eat--;
 	}
 	return (NULL);
 }
-
-// void	monitoring (t_rules *rules)
-// {
-// 	int	i;
-
-// 	i = -1;
-// 	while (++i < rules->nb_philo)
-// 	{
-// 		if ((rules->philo[i].last_eat - rules->philo[i].start) > rules->die + rules->philo[i].last_eat)
-// 		{
-// 			print_action(&rules->philo[i], "died");
-// 			i = 0;
-// 			while (++i < rules->nb_philo)
-// 			{
-// 				pthread_mutex_lock(&rules->philo[i].check_end);
-// 				rules->philo[i].end = 1;
-// 				pthread_mutex_unlock(&rules->philo[i].check_end);
-// 			}
-// 			break ;
-// 		}
-// 	}
-// }
 
 void	start_threads(t_rules *rules)
 {
@@ -183,9 +162,33 @@ void	start_threads(t_rules *rules)
 	rules->start = get_time();
 	while (++i < rules->nb_philo)
 	{
-		rules->philo[i]->start = rules->start;
-		pthread_create(&rules->philo[i]->th, NULL, routine, rules->philo[i]);
+		rules->philo[i].start = rules->start;
+		rules->philo[i].last_eat = rules->start;
+		pthread_create(&rules->philo[i].th, NULL, routine, &rules->philo[i]);
 	}
+}
+
+int	monitoring (t_philo *philo, int nb_philo, unsigned long die)
+{
+	int	i;
+
+	i = -1;
+	while (++i < nb_philo)
+	{
+		if ((philo[i].last_eat + die) < get_time())
+		{
+			print_action(&philo[i], "died");
+			i = -1;
+			while (++i < nb_philo)
+			{
+				pthread_mutex_lock(&philo[i].check_end);
+				philo[i].end = 1;
+				pthread_mutex_unlock(&philo[i].check_end);
+				return (1);
+			}
+		}
+	}
+	return (0);
 }
 
 int	main(int ac, char **av)
@@ -200,6 +203,8 @@ int	main(int ac, char **av)
 	start_threads(rules);
 	while (42)
 	{
-		// monitoring(rules);
+		if (monitoring(rules->philo, rules->nb_philo, rules->die))
+			break ;
 	}
+	printf("FNINSH\n");
 }
