@@ -6,7 +6,7 @@
 /*   By: djanusz <djanusz@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/28 15:23:45 by djanusz           #+#    #+#             */
-/*   Updated: 2023/07/07 15:19:08 by djanusz          ###   ########.fr       */
+/*   Updated: 2023/07/07 16:00:57 by djanusz          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,6 +49,7 @@ t_rules	*philo_init(t_rules *rules)
 		rules->philo[i].sleep = rules->sleep;
 		rules->philo[i].must_eat = rules->must_eat;
 		rules->philo[i].end = 0;
+		pthread_mutex_init(&rules->philo[i].check_last_eat, NULL);
 		pthread_mutex_init(&rules->philo[i].check_must_eat, NULL);
 		pthread_mutex_init(&rules->philo[i].check_end, NULL);
 		rules->philo[i].print = &rules->print;
@@ -235,6 +236,7 @@ int	monitoring(t_philo *philo, int nb_philo, unsigned long die)
 			}
 			return (1);
 		}
+		usleep(100);
 	}
 	return (0);
 }
