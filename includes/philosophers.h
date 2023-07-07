@@ -6,7 +6,7 @@
 /*   By: djanusz <djanusz@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/28 15:18:59 by djanusz           #+#    #+#             */
-/*   Updated: 2023/07/03 17:50:10 by djanusz          ###   ########.fr       */
+/*   Updated: 2023/07/07 10:48:48 by djanusz          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,15 +22,15 @@
 typedef struct s_philo
 {
 	int				id;
-	pthread_t		thread;
+	pthread_t		th;
 	int				eat;
 	int				sleep;
 	int				must_eat;
-	int				died;
-	int				someone_died;
 	unsigned long	start;
 	unsigned long	now;
 	unsigned long	last_eat;
+	int				end;
+	pthread_mutex_t	check_end;
 	pthread_mutex_t	*print;
 	pthread_mutex_t	*r_fork;
 	pthread_mutex_t	*l_fork;
@@ -44,9 +44,11 @@ typedef struct s_rules
 	int				eat;
 	int				sleep;
 	int				must_eat;
+	int				end;
+	pthread_mutex_t	check_end;
 	pthread_mutex_t	print;
 	pthread_mutex_t	*all_forks;
-	t_philo			*philo;
+	t_philo			**philo;
 }					t_rules;
 
 /* utils.c */

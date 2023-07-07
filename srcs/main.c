@@ -6,7 +6,7 @@
 /*   By: djanusz <djanusz@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/28 15:23:45 by djanusz           #+#    #+#             */
-/*   Updated: 2023/07/03 18:10:15 by djanusz          ###   ########.fr       */
+/*   Updated: 2023/07/07 10:50:06 by djanusz          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,11 +20,6 @@ unsigned long	get_time(void)
 	return ((time.tv_sec * 1000) + (time.tv_usec / 1000));
 }
 
-// rules->print = malloc(sizeof(pthread_mutex_t));
-// if (!rules->print)
-// 	return(-1);
-// if (pthread_mutex_init(rules->print, NULL))
-// 	return (-1);
 int	mutex_init(t_rules *rules)
 {
 	int	i;
@@ -32,14 +27,11 @@ int	mutex_init(t_rules *rules)
 	rules->all_forks = malloc(sizeof(pthread_mutex_t) * rules->nb_philo);
 	if (!rules->all_forks)
 		return (-1);
-	if (pthread_mutex_init(&rules->print, NULL))
-		return (-1);
+	pthread_mutex_init(&rules->print, NULL);
+	pthread_mutex_init(&rules->check_end, NULL);
 	i = -1;
 	while (++i < rules->nb_philo)
-	{
-		if (pthread_mutex_init(&rules->all_forks[i], NULL))
-			return (-1);
-	}
+		pthread_mutex_init(&rules->all_forks[i], NULL);
 	return (0);
 }
 
@@ -54,14 +46,17 @@ t_rules	*philo_init(t_rules *rules)
 	rules->start = get_time();
 	while (++i < rules->nb_philo)
 	{
-		rules->philo[i].id = i + 1;
-		rules->philo[i].start = rules->start;
-		rules->philo[i].eat = rules->eat;
-		rules->philo[i].sleep = rules->sleep;
-		rules->philo[i].must_eat = rules->must_eat;
-		rules->philo[i].print = &rules->print;
-		rules->philo[i].r_fork = &rules->all_forks[(i + 1) % rules->nb_philo];
-		rules->philo[i].l_fork = &rules->all_forks[i];
+		rules->philo[i] = malloc(sizeof(t_philo));
+		rules->philo[i]->id = i + 1;
+		rules->philo[i]->start = rules->start;
+		rules->philo[i]->eat = rules->eat;
+		rules->philo[i]->sleep = rules->sleep;
+		rules->philo[i]->must_eat = rules->must_eat;
+		rules->philo[i]->end = 0;
+		pthread_mutex_init(&rules->check_end, NULL);
+		rules->philo[i]->print = &rules->print;
+		rules->philo[i]->r_fork = &rules->all_forks[(i + 1) % rules->nb_philo];
+		rules->philo[i]->l_fork = &rules->all_forks[i];
 	}
 	return (rules);
 }
@@ -92,74 +87,104 @@ t_rules	*parsing(char **args)
 	return (philo_init(res));
 }
 
-// void	wait(t_philo *philo, unsigned long time, unsigned long tmp)
-// {
-// 	while (42)
-// 	{
-// 		philo->now = get_time();
-// 		if (philo->now - tmp >= time)
-// 			return ;
-// 	}
-// }
+int	check_end(t_philo *philo)
+{
+	pthread_mutex_lock(&philo->check_end);
+	if (philo->end)
+		return (pthread_mutex_unlock(&philo->check_end), 1);
+	return (pthread_mutex_unlock(&philo->check_end), 0);
+}
 
+int	print_action(t_philo *philo, char *msg)
+{
+	if (check_end(philo))
+		return (1);
+	pthread_mutex_lock(philo->print);
+	printf("%lu %d %s\n", get_time() - philo->start, philo->id, msg);
+	pthread_mutex_unlock(philo->print);
+	return (0);
+}
+
+void	unlock_fork(pthread_mutex_t *l_fork, pthread_mutex_t *r_fork)
+{
+	if (l_fork)
+		pthread_mutex_unlock(l_fork);
+	if (r_fork)
+		pthread_mutex_unlock(r_fork);
+}
+
+int	eating(t_philo *philo)
+{
+	pthread_mutex_lock(philo->l_fork);
+	if (print_action(philo, "has taken a fork"))
+		return (unlock_fork(philo->l_fork, NULL), 1);
+	pthread_mutex_lock(philo->r_fork);
+	if (print_action(philo, "has taken a fork"))
+		return (unlock_fork(philo->l_fork, philo->r_fork), 1);
+	if (print_action(philo, "is eating"))
+		return (unlock_fork(philo->l_fork, philo->r_fork), 1);
+	philo->last_eat = get_time();
+	usleep(philo->eat * 1000);
+	pthread_mutex_unlock(philo->r_fork);
+	pthread_mutex_unlock(philo->l_fork);
+	return (0);
+}
+
+// philo->now = get_time();
+// while (get_time() - philo->now <= (unsigned long)(philo->eat))
+// {
+// }
 void	*routine(void *arg)
 {
-	t_philo *philo = arg;
+	t_philo	*philo;
 
-	while (42)
+	philo = arg;
+	while (philo->must_eat != 0)
 	{
-		/* start of eating */
-		pthread_mutex_lock(philo->l_fork);
-		pthread_mutex_lock(philo->print);
-		printf("%lu %d has taken the left fork\n", get_time() - philo->start, philo->id);
-		pthread_mutex_unlock(philo->print);
-		pthread_mutex_lock(philo->r_fork);
-		pthread_mutex_lock(philo->print);
-		printf("%lu %d has taken the right fork\n", get_time() - philo->start, philo->id);
-		printf("%lu %d is eating\n", get_time() - philo->start, philo->id);
-		pthread_mutex_unlock(philo->print);
-		philo->now = get_time();
-		philo->last_eat = philo->now;
-		while (get_time() - philo->now < (unsigned long)(philo->eat))
-		{
-		}
-		pthread_mutex_unlock(philo->r_fork);
-		pthread_mutex_unlock(philo->l_fork);
-		/* end of eating */
-		/* start of sleeping */
-		pthread_mutex_lock(philo->print);
-		printf("%lu %d is sleeping\n", get_time() - philo->start, philo->id);
-		pthread_mutex_unlock(philo->print);
-		philo->now = get_time();
-		while (get_time() - philo->now < (unsigned long)(philo->sleep))
-		{
-		}
-		/* end of sleeping */
-		/* start of thinking */
-		pthread_mutex_lock(philo->print);
-		printf("%lu %d is thinking\n", get_time() - philo->start, philo->id);
-		pthread_mutex_unlock(philo->print);
-		/* end of thinking */
+		if (eating(philo))
+			return (NULL);
+		if (print_action(philo, "is sleeping"))
+			return (NULL);
+		usleep(philo->sleep * 1000);
+		if (print_action(philo, "is thinking"))
+			return (NULL);
+		philo->must_eat--;
 	}
 	return (NULL);
 }
+
+// void	monitoring (t_rules *rules)
+// {
+// 	int	i;
+
+// 	i = -1;
+// 	while (++i < rules->nb_philo)
+// 	{
+// 		if ((rules->philo[i].last_eat - rules->philo[i].start) > rules->die + rules->philo[i].last_eat)
+// 		{
+// 			print_action(&rules->philo[i], "died");
+// 			i = 0;
+// 			while (++i < rules->nb_philo)
+// 			{
+// 				pthread_mutex_lock(&rules->philo[i].check_end);
+// 				rules->philo[i].end = 1;
+// 				pthread_mutex_unlock(&rules->philo[i].check_end);
+// 			}
+// 			break ;
+// 		}
+// 	}
+// }
 
 void	start_threads(t_rules *rules)
 {
 	int	i;
 
-	i = 0;
-	while (i < rules->nb_philo)
+	i = -1;
+	rules->start = get_time();
+	while (++i < rules->nb_philo)
 	{
-		pthread_create(&rules->philo[i].thread, NULL, routine, &rules->philo[i]);
-		i += 2;
-	}
-	usleep((rules->eat * 1000) * 0.5);
-	i = 1;
-	while (i < rules->nb_philo)
-	{
-		pthread_create(&rules->philo[i].thread, NULL, routine, &rules->philo[i]);
-		i += 2;
+		rules->philo[i]->start = rules->start;
+		pthread_create(&rules->philo[i]->th, NULL, routine, rules->philo[i]);
 	}
 }
 
@@ -175,5 +200,6 @@ int	main(int ac, char **av)
 	start_threads(rules);
 	while (42)
 	{
+		// monitoring(rules);
 	}
 }
