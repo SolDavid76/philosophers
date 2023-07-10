@@ -6,7 +6,7 @@
 /*   By: djanusz <djanusz@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/07/10 16:26:33 by djanusz           #+#    #+#             */
-/*   Updated: 2023/07/10 16:32:42 by djanusz          ###   ########.fr       */
+/*   Updated: 2023/07/10 16:47:52 by djanusz          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,12 +22,13 @@ void	unlock_fork(pthread_mutex_t *l_fork, pthread_mutex_t *r_fork)
 
 int	lock_fork(t_philo *philo)
 {
-	if (philo->l_fork == philo->r_fork)
-		return (1);
+	
 	if (philo->id % 2)
 	{
 		pthread_mutex_lock(philo->l_fork);
 		if (print_action(philo, "has taken a fork"))
+			return (unlock_fork(philo->l_fork, NULL), 1);
+		if (philo->l_fork == philo->r_fork)
 			return (unlock_fork(philo->l_fork, NULL), 1);
 		pthread_mutex_lock(philo->r_fork);
 		if (print_action(philo, "has taken a fork"))
@@ -37,6 +38,8 @@ int	lock_fork(t_philo *philo)
 	{
 		pthread_mutex_lock(philo->r_fork);
 		if (print_action(philo, "has taken a fork"))
+			return (unlock_fork(NULL, philo->r_fork), 1);
+		if (philo->l_fork == philo->r_fork)
 			return (unlock_fork(NULL, philo->r_fork), 1);
 		pthread_mutex_lock(philo->l_fork);
 		if (print_action(philo, "has taken a fork"))
