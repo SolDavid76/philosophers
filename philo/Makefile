@@ -2,6 +2,10 @@ SRCS_DIR	=	srcs/
 
 SRC			=	main.c\
 				utils.c\
+				actions.c\
+				checkers.c\
+				monitoring.c\
+				parsing.c\
 
 SRCS		=	$(addprefix $(SRCS_DIR), $(SRC))
 
@@ -15,7 +19,7 @@ NAME		=	philo
 
 CC			=	gcc -pthread
 
-CFLAGS		=	-Wall -Wextra -Werror -g3
+CFLAGS		=	-Wall -Wextra -Werror
 
 INCS		=	-I ./includes/
 

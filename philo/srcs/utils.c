@@ -6,11 +6,19 @@
 /*   By: djanusz <djanusz@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/29 11:55:10 by djanusz           #+#    #+#             */
-/*   Updated: 2023/07/07 15:08:51 by djanusz          ###   ########.fr       */
+/*   Updated: 2023/07/10 16:25:08 by djanusz          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "philosophers.h"
+
+unsigned long	get_time(void)
+{
+	struct timeval	time;
+
+	gettimeofday(&time, NULL);
+	return ((time.tv_sec * 1000) + (time.tv_usec / 1000));
+}
 
 int	ft_strslen(char **strs)
 {
