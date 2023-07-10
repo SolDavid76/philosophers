@@ -6,7 +6,7 @@
 /*   By: djanusz <djanusz@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/07/10 16:26:33 by djanusz           #+#    #+#             */
-/*   Updated: 2023/07/10 16:47:52 by djanusz          ###   ########.fr       */
+/*   Updated: 2023/07/10 16:49:35 by djanusz          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,7 +22,6 @@ void	unlock_fork(pthread_mutex_t *l_fork, pthread_mutex_t *r_fork)
 
 int	lock_fork(t_philo *philo)
 {
-	
 	if (philo->id % 2)
 	{
 		pthread_mutex_lock(philo->l_fork);
